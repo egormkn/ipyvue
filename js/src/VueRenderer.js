@@ -10,8 +10,11 @@ const JupyterPhosphorWidget = base.JupyterPhosphorWidget || base.JupyterLuminoWi
 export function createObjectForNestedModel(model, parentView) {
     let currentView =  null;
     let destroyed = false;
+    let parentNode = null;
     return {
         mounted() {
+            const refNode = this.$el;
+            parentNode = this.$el.parentNode;
             parentView
                 .create_child_view(model)
                 .then(view => {
@@ -19,11 +22,10 @@ export function createObjectForNestedModel(model, parentView) {
                     // since create view is async, the vue component might be destroyed before the view is created
                     if(!destroyed) {
                         if(JupyterPhosphorWidget && (view.pWidget || view.luminoWidget || view.lmWidget)) {
-                            JupyterPhosphorWidget.attach(view.pWidget || view.luminoWidget || view.lmWidget, this.$el);
+                            JupyterPhosphorWidget.attach(view.pWidget || view.luminoWidget || view.lmWidget, parentNode, refNode);
                         } else {
                             console.error("Could not attach widget to DOM using Lumino or Phosphor. Fallback to normal DOM attach", JupyterPhosphorWidget, view.pWidget, view.luminoWidget, view.lmWidget);
-                            this.$el.appendChild(view.el);
-
+                            parentNode.insertBefore(view.el, refNode);
                         }
                     } else {
                         currentView.remove();
@@ -38,15 +40,17 @@ export function createObjectForNestedModel(model, parentView) {
                 // (current.remove triggers a phosphor detach)
                 // To be sure we do not cause any flickering, we hide the node before moving it.
                 const widget = currentView.pWidget || currentView.luminoWidget || currentView.lmWidget;
-                widget.node.style.display = "none";
-                document.body.appendChild(widget.node)
+                if (!parentNode.contains(widget.node)) {
+                    widget.node.style.display = "none";
+                    document.body.appendChild(widget.node);
+                }
                 currentView.remove();
             } else {
                 destroyed = true;
             }
         },
         render(createElement) {
-            return createElement('div', { style: { height: '100%' } });
+            return createElement(null);
         },
     };
 }
