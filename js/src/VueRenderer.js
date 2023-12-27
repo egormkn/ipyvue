@@ -15,6 +15,7 @@ export function createObjectForNestedModel(model, parentView) {
         mounted() {
             const refNode = this.$el;
             parentNode = this.$el.parentNode;
+            let childNode = null;
             parentView
                 .create_child_view(model)
                 .then(view => {
@@ -22,11 +23,15 @@ export function createObjectForNestedModel(model, parentView) {
                     // since create view is async, the vue component might be destroyed before the view is created
                     if(!destroyed) {
                         if(JupyterPhosphorWidget && (view.pWidget || view.luminoWidget || view.lmWidget)) {
-                            JupyterPhosphorWidget.attach(view.pWidget || view.luminoWidget || view.lmWidget, parentNode, refNode);
+                            const widget = view.pWidget || view.luminoWidget || view.lmWidget;
+                            JupyterPhosphorWidget.attach(widget, parentNode, refNode);
+                            childNode = widget.node;
                         } else {
                             console.error("Could not attach widget to DOM using Lumino or Phosphor. Fallback to normal DOM attach", JupyterPhosphorWidget, view.pWidget, view.luminoWidget, view.lmWidget);
-                            parentNode.insertBefore(view.el, refNode);
+                            childNode = parentNode.insertBefore(view.el, refNode);
                         }
+                        this.$el = childNode;
+                        refNode.remove();
                     } else {
                         currentView.remove();
                     }
