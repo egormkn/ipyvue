@@ -46,7 +46,7 @@ export function createObjectForNestedModel(model, parentView) {
             }
         },
         render(createElement) {
-            return createElement('div', { style: { height: '100%' } });
+            return createElement('div');
         },
     };
 }
